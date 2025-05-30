@@ -120,7 +120,7 @@ class Vehicle():
             acc = (0 - self.speed) / self.sim_step
         else:
             # 计算期望的跟车距离，并根据车距调整加速度
-            desired_dist = net_dist + 2 * np.math.sqrt(v / dv) + rt * v + v * (v - fv) / 2.0 / np.math.sqrt(ma * cd)
+            desired_dist = net_dist + 2 * np.sqrt(v / dv) + rt * v + v * (v - fv) / 2.0 / np.sqrt(ma * cd)
             acc = ma * (1 - (v / dv) ** 4 - (desired_dist / gap) ** 2)
 
         return acc

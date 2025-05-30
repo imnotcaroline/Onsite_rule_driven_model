@@ -4,8 +4,9 @@ import pickle
 import numpy as np
 import pandas as pd
 import argparse
-from simulator import Sim
 from tkinter import Tk
+
+from simulator import Sim
 from util.modification import adjust_positions, interpolate_short_trajectories, smooth_trajectories, handle_unresolvable_violations
 
 def process_folder(xodr_file, exam_file, output_dir):
@@ -171,13 +172,17 @@ def process_folder(xodr_file, exam_file, output_dir):
 
 if __name__ == '__main__':
     # 配置命令行参数
-    parser = argparse.ArgumentParser(description='处理单个交通仿真场景')
-    parser.add_argument('--xodr_file', required=True, help='输入xodr文件')
-    parser.add_argument('--exam_file', required=True, help='输入exam文件')
-    parser.add_argument('--output_dir', required=True, help='输出目录')
+    # parser = argparse.ArgumentParser(description='处理单个交通仿真场景')
+    # parser.add_argument('--xodr_file', required=True, help='输入xodr文件')
+    # parser.add_argument('--exam_file', required=True, help='输入exam文件')
+    # parser.add_argument('--output_dir', required=True, help='输出目录')
+    #
+    # args = parser.parse_args()
     
-    args = parser.parse_args()
-    
-    process_folder(args.xodr_file, args.exam_file, args.output_dir)
+    # process_folder(args.xodr_file, args.exam_file, args.output_dir)
+    xodr_file = r"onsite/output_A/test/0_1003_merge_1004.xodr"
+    exam_file = r"onsite/output_A/test/0_1003_merge_1004_exam.pkl"
+    output_dir = r"onsite\output_A"
+    process_folder(xodr_file, exam_file, output_dir)
 
-# python run_single.py --xodr_file Onsite\第五赛道_B卷\0_6_straight_straight_19\0_6_straight_straight_19.xodr --exam_file Onsite\第五赛道_B卷\0_6_straight_straight_19\0_6_straight_straight_19_exam.pkl --output_dir Onsite\output_A
+# python run_single.py --xodr_file onsite\0_6_straight_straight_19.xodr --exam_file onsite\0_6_straight_straight_19_exam.pkl --output_dir onsite\output_A
