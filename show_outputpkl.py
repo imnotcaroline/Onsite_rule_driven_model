@@ -7,7 +7,41 @@ from matplotlib import pyplot as plt
 from matplotlib import transforms
 from matplotlib.patches import Rectangle
 from parse_and_visualize import process_one_file
-
+# 设置全局字体 (确保只设置一次)
+plt.rcParams.update({
+     'font.family': 'Times New Roman',
+     'font.size': 10,
+     'axes.titlesize': 11,
+     'axes.labelsize': 10,
+     'axes.labelweight': 'bold',
+     'xtick.labelsize': 9,
+     'ytick.labelsize': 9,
+     'legend.fontsize': 8,
+     'figure.figsize': (7, 12),  #保持你原有的大小比例
+     'figure.dpi': 300,
+     'savefig.dpi': 600, # 提高为600，确保高质量打印
+     'savefig.format': 'tiff', # 科研期刊常用格式
+     'savefig.bbox': 'tight',
+     'savefig.pad_inches': 0.05,
+     'axes.grid': True,
+     'grid.alpha': 0.2,
+     'grid.linestyle': ':',
+     'axes.linewidth': 0.8,
+     'axes.edgecolor': '#333333',
+     'xtick.direction': 'out',
+     'ytick.direction': 'out',
+     'xtick.major.width': 0.8,
+     'ytick.major.width': 0.8,
+     'xtick.minor.visible': False,
+     'ytick.minor.visible': False,
+     'xtick.minor.width': 0.6,
+     'ytick.minor.width': 0.6,
+     'mathtext.fontset': 'stix', # 使用stix渲染数学公式
+     'axes.unicode_minus': True, # 确保负号显示正确
+     'mathtext.rm': 'Times New Roman',
+     'mathtext.it': 'Times New Roman:italic',
+     'mathtext.bf': 'Times New Roman:bold',
+})
 
 
 
@@ -26,18 +60,87 @@ class OutputVisualization:
             rgb_colors.append((int(r * 255), int(g * 255), int(b * 255)))
         return rgb_colors
 
+    def get_n_hls_colors_preset(self, num):
+        """
+        生成 N 种预设的、视觉上更容易区分的 HLS 颜色。
+        适用于小数量的颜色，提供更好的区分度。
+        """
+        if num <= 0:
+            return []
+
+        # 预设的、视觉上差异较大的色相值 (0.0 到 1.0 范围)
+        # 例如：红、绿、蓝、黄、品红、青、橙、紫、棕、灰等
+        # 这些值是经过经验验证，能提供良好视觉区分度的
+        distinct_hues = [
+            0.0,  # 红色
+            0.333,  # 绿色
+            0.666,  # 蓝色
+            0.166,  # 黄色
+            0.833,  # 品红色
+            0.5,  # 青色
+            0.083,  # 橙色
+            0.75,  # 紫色
+            0.125,  # 金色/棕黄色
+            0.916  # 玫瑰红/粉红色
+        ]
+
+        hls_colors = []
+        # 使用这些预设的色相，并固定亮度和饱和度为较好的值
+        l_val = 0.5
+        s_val = 0.9
+
+        # 如果所需颜色数量小于预设数量，则只取预设中的部分
+        for i in range(min(num, len(distinct_hues))):
+            h = distinct_hues[i]
+            hls_colors.append((h, l_val, s_val))
+
+        # 如果 num 大于预设数量，为了满足数量要求，
+        # 可以考虑回到策略1的方法，或循环使用这些预设色相并改变亮/饱和度
+        # 这里我们简单地继续均匀分布并略微调整亮度和饱和度
+        for i in range(len(distinct_hues), num):
+            h = i / num  # 继续均匀分布色相
+            l = 0.5 + 0.1 * (i % 2)  # 亮度的简单交错
+            s = 0.8 + 0.1 * (i % 3)  # 饱和度的简单交错
+            hls_colors.append((h, l, s))
+
+        rgb_colors = []
+        for h, l, s in hls_colors:
+            r, g, b = colorsys.hls_to_rgb(h, l, s)
+            rgb_colors.append((int(r * 255), int(g * 255), int(b * 255)))
+        return rgb_colors
+
     def filter_trailing_zeros_1d(self, array):
         """过滤掉一维数组末尾连续的零值"""
         if len(array) == 0:
             return np.array([])  # 处理空数组
 
-        # 从后向前查找第一个非零元素的索引
+        # # 从后向前查找第一个非零元素的索引
+        # for i in range(len(array) - 1, -1, -1):
+        #     if array[i] != 0:
+        #         return array[:i + 1]  # 返回从开头到该索引的所有元素
+        #
+        # # 如果全是零，返回空数组
+        # return np.array([])
+        # 找到第一个非零元素的索引
+        first_non_zero_idx = -1
+        for i in range(len(array)):
+            if array[i] != 0:
+                first_non_zero_idx = i
+                break
+
+        # 如果整个数组都是零，或者没有非零元素
+        if first_non_zero_idx == -1:
+            return np.array([])
+
+        # 找到最后一个非零元素的索引
+        last_non_zero_idx = -1
         for i in range(len(array) - 1, -1, -1):
             if array[i] != 0:
-                return array[:i + 1]  # 返回从开头到该索引的所有元素
+                last_non_zero_idx = i
+                break
 
-        # 如果全是零，返回空数组
-        return np.array([])
+        # 返回从第一个非零元素到最后一个非零元素的所有数据
+        return array[first_non_zero_idx: last_non_zero_idx + 1]
 
     def filter_trailing_zeros(self, position_array):
         """过滤掉数组末尾连续的[0, 0]行"""
@@ -47,11 +150,15 @@ class OutputVisualization:
         if len(non_zero_indices) == 0:
             return np.array([])  # 如果全是零，返回空数组
 
+        # 获取第一个非零行的索引
+        first_non_zero = non_zero_indices[0]
         # 获取最后一个非零行的索引
         last_non_zero = non_zero_indices[-1]
 
-        # 返回从开头到最后一个非零行的所有数据
-        return position_array[:last_non_zero + 1]
+        # # 返回从开头到最后一个非零行的所有数据
+        # return position_array[:last_non_zero + 1]
+        # 返回从第一个非零行到最后一个非零行的所有数据
+        return position_array[first_non_zero: last_non_zero + 1]
 
     def run(self):
 
@@ -74,7 +181,8 @@ class OutputVisualization:
         headings = data['headings']
 
         # 生成颜色列表
-        colors_generate = self.get_n_hls_colors(20)
+        # colors_generate = self.get_n_hls_colors(20)
+        colors_generate = self.get_n_hls_colors_preset(20)
         colors_list = ["#{:02x}{:02x}{:02x}".format(r, g, b) for r, g, b in colors_generate]
 
         # 创建保存目录
@@ -96,6 +204,7 @@ class OutputVisualization:
         ax.grid(True, linestyle='--', alpha=0.7)
         ax.set_aspect('equal', adjustable='box')
 
+
         # ========== 绘制轨迹与车辆 ==========
         for index, positions_n in enumerate(positions):
             if predict_mask[index] and agent_types[index] == 0:
@@ -112,7 +221,7 @@ class OutputVisualization:
                 headings_n = self.filter_trailing_zeros_1d(headings[index])
 
                 # 轨迹线
-                ax.plot(x_list, y_list, linestyle='-', linewidth=1.5, color=color_n, alpha=0.7,
+                ax.plot(x_list, y_list, linestyle='-', linewidth=15, color=color_n, alpha=0.7,
                         label=f"{agent_name}_Trajectory")
 
                 # 最终位置车辆框
@@ -130,8 +239,8 @@ class OutputVisualization:
                 ax.add_patch(vehicle_rect)
 
                 # 起点终点标记
-                ax.scatter(x_list[0], y_list[0], color='green', s=50, marker='o', label=f"{agent_name}_Start")
-                ax.scatter(x_list[-1], y_list[-1], color='red', s=50, marker='o', label=f"{agent_name}_End")
+                ax.scatter(x_list[0], y_list[0], color='green', s=300, marker='o', label=f"{agent_name}_Start")
+                ax.scatter(x_list[-1], y_list[-1], color='red', s=300, marker='o', label=f"{agent_name}_End")
 
         # ========== 右侧添加图例 ==========
 
@@ -149,7 +258,7 @@ class OutputVisualization:
                 unique_labels[l] = h
         legend_ax.legend(
             unique_labels.values(), unique_labels.keys(),
-            loc='center left', fontsize=90, frameon=False
+            loc='center left',  fontsize=125,frameon=False
         )
 
         # ========== 保存图像 ==========

@@ -46,7 +46,7 @@ COLOR_REFERECE_LINE = "#0000EE"
 STEP = 0.1
 
 # xodr文件的读取和解析
-def load_xodr_and_parse(file=XODR_FILE):
+def load_xodr_and_parse(file):
 
     with open(file, 'r') as fh:
         parser = etree.XMLParser()
